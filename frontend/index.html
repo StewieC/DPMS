@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PropertyVault DApp</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏠 PropertyVault</h1>
+      <button id="connectWalletBtn" class="glow-btn">Connect MetaMask</button>
+      <p id="walletAddress"></p>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Create Property</h2>
+        <input id="tenantAddress" placeholder="Tenant address" />
+        <input id="rentAmount" placeholder="Rent amount (wei)" />
+        <input id="savingsPercentage" placeholder="Savings % (0-100)" />
+        <input id="savingsGoal" placeholder="Savings goal (wei)" />
+        <button id="createPropertyBtn" class="action-btn">Create Property</button>
+      </section>
+
+      <section class="card">
+        <h2>Pay Rent</h2>
+        <input id="propertyIdRent" placeholder="Property ID" />
+        <input id="tokenAddressRent" placeholder="Token address" />
+        <button id="payRentBtn" class="action-btn">Pay Rent</button>
+      </section>
+
+      <section class="card">
+        <h2>Withdraw Savings</h2>
+        <input id="propertyIdWithdraw" placeholder="Property ID" />
+        <button id="withdrawBtn" class="action-btn">Withdraw</button>
+      </section>
+
+      <section class="card">
+        <h2>View Savings Progress</h2>
+        <input id="propertyIdProgress" placeholder="Property ID" />
+        <button id="viewProgressBtn" class="action-btn">Check Progress</button>
+        <p id="progressOutput" class="output"></p>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  <script src="script.js" type="module"></script>
+</body>
+</html>

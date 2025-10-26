@@ -1,21 +1,34 @@
 const hre = require("hardhat");
+const fs = require("fs");
 
 async function main() {
-  console.log("🚀 Deploying PropertyVault...");
+  console.log("🚀 Deploying PropertyVault locally...");
 
-  // Sepolia test tokens (USDC and DAI)
-  const tokens = [
-    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // USDC
-    "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"  // DAI
-  ];
+  const [deployer] = await hre.ethers.getSigners();
+  console.log("Deployer address:", deployer.address);
 
+  // Deploy mock token first
+  const MockToken = await hre.ethers.getContractFactory("MockToken");
+  const mockToken = await MockToken.deploy("MockToken", "MTK", 1000000);
+  await mockToken.waitForDeployment();
+  console.log("MockToken deployed to:", await mockToken.getAddress());
+
+  // Deploy PropertyVault
   const PropertyVault = await hre.ethers.getContractFactory("PropertyVault");
-  const propertyVault = await PropertyVault.deploy(tokens);
-
+  const propertyVault = await PropertyVault.deploy([await mockToken.getAddress()]);
   await propertyVault.waitForDeployment();
-  console.log("✅ PropertyVault deployed to:", propertyVault.address);
-  console.log("📋 Save this address for frontend!");
-  console.log("💰 Accepted tokens:", tokens);
+
+  const propertyVaultAddress = await propertyVault.getAddress();
+  console.log("PropertyVault deployed to:", propertyVaultAddress);
+
+  // Save deployment info
+  const data = {
+    address: propertyVaultAddress,
+    abi: JSON.parse(propertyVault.interface.formatJson())
+  };
+
+  fs.writeFileSync("./frontend/contractData.json", JSON.stringify(data, null, 2));
+  console.log("✅ Contract data saved to frontend/contractData.json");
 }
 
 main().catch((error) => {
