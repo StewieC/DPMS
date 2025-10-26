@@ -3,19 +3,18 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract PropertyVault is Ownable, ReentrancyGuard {
+contract PropertyVault is Ownable {
     struct Property {
         address tenant;
-        uint256 rentAmount; // In smallest unit of stablecoin
-        uint256 savingsPercentage; // 0-100
+        uint256 rentAmount;
+        uint256 savingsPercentage;
         uint256 lastPaymentTime;
         bool active;
         uint256 totalSaved;
-        uint256 savingsGoal; // Target amount for savings
-        uint256 savingsPoints; // Points for rent consistency
-        bool tenantEligibleForBonus; // Flag for bonus eligibility
+        uint256 savingsGoal;
+        uint256 savingsPoints;
+        bool tenantEligibleForBonus;
     }
 
     struct EmergencyUnlock {
@@ -29,12 +28,12 @@ contract PropertyVault is Ownable, ReentrancyGuard {
     mapping(uint256 => Property) public properties;
     mapping(uint256 => EmergencyUnlock) public emergencyUnlocks;
     uint256 public nextPropertyId = 1;
-    address[] public acceptedTokens; // Multi-currency support
-    uint256 public tenantBonusPool; // Pool for tenant incentives
-    address public governanceAddress; // Placeholder for future DAO
+    address[] public acceptedTokens;
+    uint256 public tenantBonusPool;
+    address public governanceAddress;
 
     uint256 public constant MONTH_IN_SECONDS = 30 days;
-    uint256 public constant APPROVAL_THRESHOLD = 2; // 2/3 multi-sig (adjustable)
+    uint256 public constant APPROVAL_THRESHOLD = 2;
 
     event PropertyCreated(uint256 indexed propertyId, address owner, address tenant, uint256 rent);
     event RentPaid(uint256 indexed propertyId, uint256 amount, uint256 saved, uint256 pointsEarned);
@@ -75,38 +74,7 @@ contract PropertyVault is Ownable, ReentrancyGuard {
         emit PropertyCreated(propertyId, msg.sender, _tenant, _rentAmount);
     }
 
-    function payRent(uint256 _propertyId, address _token) external nonReentrant {
-        Property storage prop = properties[_propertyId];
-        require(prop.active, "Property inactive");
-        require(msg.sender == prop.tenant, "Not tenant");
-        require(block.timestamp >= prop.lastPaymentTime + MONTH_IN_SECONDS, "Rent already paid");
-        require(isAcceptedToken(_token), "Token not accepted");
-
-        IERC20 token = IERC20(_token);
-        uint256 savingsAmount = (prop.rentAmount * prop.savingsPercentage) / 100;
-        uint256 ownerAmount = prop.rentAmount - savingsAmount;
-        uint256 bonusAmount = (prop.rentAmount * 1) / 100; // 1% bonus for tenant
-
-        require(token.transferFrom(msg.sender, address(this), prop.rentAmount), "Payment failed");
-        require(token.transfer(owner(), ownerAmount), "Owner transfer failed");
-
-        prop.totalSaved += savingsAmount;
-        prop.lastPaymentTime = block.timestamp;
-        prop.savingsPoints += 10; // Award 10 points for timely payment
-        prop.tenantEligibleForBonus = true;
-
-        tenantBonusPool += bonusAmount; // Add to bonus pool
-        emit RentPaid(_propertyId, prop.rentAmount, savingsAmount, 10);
-
-        if (tenantBonusPool >= bonusAmount) {
-            tenantBonusPool -= bonusAmount;
-            require(token.transfer(prop.tenant, bonusAmount), "Bonus transfer failed");
-            emit TenantBonusPaid(_propertyId, prop.tenant, bonusAmount);
-            prop.tenantEligibleForBonus = false;
-        }
-    }
-
-    function withdrawSavings(uint256 _propertyId) external onlyOwner {
+    function withdrawSavings(uint256 _propertyId) public onlyOwner {
         Property storage prop = properties[_propertyId];
         require(prop.active, "Property inactive");
 
@@ -119,9 +87,40 @@ contract PropertyVault is Ownable, ReentrancyGuard {
         uint256 amount = prop.totalSaved;
         prop.totalSaved = 0;
         require(acceptedTokens.length > 0, "No tokens configured");
-        IERC20 token = IERC20(acceptedTokens[0]); // Default to first token
+        IERC20 token = IERC20(acceptedTokens[0]);
         require(token.transfer(owner(), amount), "Withdraw failed");
         emit SavingsWithdrawn(_propertyId, amount);
+    }
+
+    function payRent(uint256 _propertyId, address _token) external {
+        Property storage prop = properties[_propertyId];
+        require(prop.active, "Property inactive");
+        require(msg.sender == prop.tenant, "Not tenant");
+        require(block.timestamp >= prop.lastPaymentTime + MONTH_IN_SECONDS, "Rent already paid");
+        require(isAcceptedToken(_token), "Token not accepted");
+
+        IERC20 token = IERC20(_token);
+        uint256 savingsAmount = (prop.rentAmount * prop.savingsPercentage) / 100;
+        uint256 ownerAmount = prop.rentAmount - savingsAmount;
+        uint256 bonusAmount = (prop.rentAmount * 1) / 100;
+
+        require(token.transferFrom(msg.sender, address(this), prop.rentAmount), "Payment failed");
+        require(token.transfer(owner(), ownerAmount), "Owner transfer failed");
+
+        prop.totalSaved += savingsAmount;
+        prop.lastPaymentTime = block.timestamp;
+        prop.savingsPoints += 10;
+        prop.tenantEligibleForBonus = true;
+
+        tenantBonusPool += bonusAmount;
+        emit RentPaid(_propertyId, prop.rentAmount, savingsAmount, 10);
+
+        if (tenantBonusPool >= bonusAmount) {
+            tenantBonusPool -= bonusAmount;
+            require(token.transfer(prop.tenant, bonusAmount), "Bonus transfer failed");
+            emit TenantBonusPaid(_propertyId, prop.tenant, bonusAmount);
+            prop.tenantEligibleForBonus = false;
+        }
     }
 
     function requestEmergencyUnlock(uint256 _propertyId, address[] calldata _approvers) external onlyOwner {
@@ -131,7 +130,7 @@ contract PropertyVault is Ownable, ReentrancyGuard {
 
         unlock.propertyId = _propertyId;
         unlock.approvers = _approvers;
-        unlock.approvalCount = 1; // Owner's initial approval
+        unlock.approvalCount = 1;
         unlock.approvals[msg.sender] = true;
         emit EmergencyUnlockRequested(_propertyId, msg.sender);
     }
@@ -147,7 +146,7 @@ contract PropertyVault is Ownable, ReentrancyGuard {
         emit EmergencyUnlockApproved(_propertyId, msg.sender);
 
         if (unlock.approvalCount >= APPROVAL_THRESHOLD) {
-            withdrawSavings(_propertyId); // Trigger withdrawal
+            withdrawSavings(_propertyId); // Now visible since defined above
             emit EmergencyUnlockExecuted(_propertyId, properties[_propertyId].totalSaved);
         }
     }
@@ -155,7 +154,7 @@ contract PropertyVault is Ownable, ReentrancyGuard {
     function getSavingsProgress(uint256 _propertyId) external view returns (uint256) {
         Property memory prop = properties[_propertyId];
         if (prop.savingsGoal == 0) return 0;
-        return (prop.totalSaved * 100) / prop.savingsGoal; // Percentage toward goal
+        return (prop.totalSaved * 100) / prop.savingsGoal;
     }
 
     function isAcceptedToken(address _token) internal view returns (bool) {
