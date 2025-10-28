@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import { getContract } from "./utils/contract";
 
 function App() {
@@ -9,16 +10,18 @@ function App() {
     const init = async () => {
       const contract = await getContract();
       setVault(contract);
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      setAccount(accounts[0]);
+      const accounts = await window.ethereum?.request({ method: "eth_requestAccounts" });
+      setAccount(accounts ? accounts[0] : null);
     };
     init();
   }, []);
 
   const createProperty = async () => {
     if (vault) {
+      // Use a valid test address (replace with another account or input later)
+      const tenantAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"; // Example Hardhat account #1
       const tx = await vault.createProperty(
-        "0xTenantAddress", // Replace with a test tenant address
+        tenantAddress,
         ethers.parseUnits("100", 6), // Rent amount
         20, // Savings percentage
         ethers.parseUnits("500", 6) // Savings goal
