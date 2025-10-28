@@ -9,6 +9,10 @@
         {
           "type": "address[]",
           "name": "_acceptedTokens"
+        },
+        {
+          "type": "address",
+          "name": "_initialOwner"
         }
       ]
     },
@@ -118,6 +122,11 @@
         {
           "type": "address",
           "name": "tenant",
+          "indexed": false
+        },
+        {
+          "type": "string",
+          "name": "roomLabel",
           "indexed": false
         },
         {
@@ -264,6 +273,10 @@
           "name": "_tenant"
         },
         {
+          "type": "string",
+          "name": "_roomLabel"
+        },
+        {
           "type": "uint256",
           "name": "_rentAmount"
         },
@@ -307,6 +320,62 @@
     },
     {
       "type": "function",
+      "name": "getAllProperties",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "tuple[]",
+          "name": "",
+          "components": [
+            {
+              "type": "address",
+              "name": "tenant"
+            },
+            {
+              "type": "string",
+              "name": "roomLabel"
+            },
+            {
+              "type": "uint256",
+              "name": "rentAmount"
+            },
+            {
+              "type": "uint256",
+              "name": "savingsPercentage"
+            },
+            {
+              "type": "uint256",
+              "name": "lastPaymentTime"
+            },
+            {
+              "type": "bool",
+              "name": "active"
+            },
+            {
+              "type": "uint256",
+              "name": "totalSaved"
+            },
+            {
+              "type": "uint256",
+              "name": "savingsGoal"
+            },
+            {
+              "type": "uint256",
+              "name": "savingsPoints"
+            },
+            {
+              "type": "bool",
+              "name": "tenantEligibleForBonus"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "function",
       "name": "getSavingsProgress",
       "constant": true,
       "stateMutability": "view",
@@ -321,6 +390,67 @@
         {
           "type": "uint256",
           "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getTenantProperty",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_tenant"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "tuple",
+          "name": "",
+          "components": [
+            {
+              "type": "address",
+              "name": "tenant"
+            },
+            {
+              "type": "string",
+              "name": "roomLabel"
+            },
+            {
+              "type": "uint256",
+              "name": "rentAmount"
+            },
+            {
+              "type": "uint256",
+              "name": "savingsPercentage"
+            },
+            {
+              "type": "uint256",
+              "name": "lastPaymentTime"
+            },
+            {
+              "type": "bool",
+              "name": "active"
+            },
+            {
+              "type": "uint256",
+              "name": "totalSaved"
+            },
+            {
+              "type": "uint256",
+              "name": "savingsGoal"
+            },
+            {
+              "type": "uint256",
+              "name": "savingsPoints"
+            },
+            {
+              "type": "bool",
+              "name": "tenantEligibleForBonus"
+            }
+          ]
         }
       ]
     },
@@ -401,6 +531,10 @@
           "name": "tenant"
         },
         {
+          "type": "string",
+          "name": "roomLabel"
+        },
+        {
           "type": "uint256",
           "name": "rentAmount"
         },
@@ -479,6 +613,25 @@
       "stateMutability": "view",
       "payable": false,
       "inputs": [],
+      "outputs": [
+        {
+          "type": "uint256",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "tenantToPropertyId",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": ""
+        }
+      ],
       "outputs": [
         {
           "type": "uint256",

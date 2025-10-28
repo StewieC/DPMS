@@ -1,43 +1,29 @@
+// scripts/deploy.js
 const hre = require("hardhat");
 const fs = require("fs");
 
 async function main() {
-  console.log("🚀 Deploying PropertyVault...");
-
   const [deployer] = await hre.ethers.getSigners();
-  console.log("Deployer address:", deployer.address);
+  console.log("Deploying with:", deployer.address);
 
-  try {
-    // Deploy mock token with 6 decimals
-    const MockToken = await hre.ethers.getContractFactory("MockToken");
-    const mockToken = await MockToken.deploy("Mock USDC", "MUSDC", 1000000, 6);
-    await mockToken.waitForDeployment();
-    console.log("MockToken deployed to:", await mockToken.getAddress());
+  const MockToken = await hre.ethers.getContractFactory("MockToken");
+  const token = await MockToken.deploy("USDC", "USDC", 1000000, 6);
+  await token.waitForDeployment();
+  console.log("MockToken:", await token.getAddress());
 
-    // Deploy PropertyVault
-    const PropertyVault = await hre.ethers.getContractFactory("PropertyVault");
-    const propertyVault = await PropertyVault.deploy([await mockToken.getAddress()]);
-    await propertyVault.waitForDeployment();
+  const Vault = await hre.ethers.getContractFactory("PropertyVault");
+  const vault = await Vault.deploy([await token.getAddress()], deployer.address);
+  await vault.waitForDeployment();
+  console.log("PropertyVault:", await vault.getAddress());
 
-    const propertyVaultAddress = await propertyVault.getAddress();
-    console.log("PropertyVault deployed to:", propertyVaultAddress);
+  const data = {
+    address: await vault.getAddress(),
+    abi: JSON.parse(vault.interface.formatJson())
+  };
 
-    // Save deployment info
-    const data = {
-      address: propertyVaultAddress,
-      abi: JSON.parse(propertyVault.interface.formatJson())
-    };
-
-    if (!fs.existsSync("./frontend")) fs.mkdirSync("./frontend");
-    fs.writeFileSync("./frontend/contractData.json", JSON.stringify(data, null, 2));
-    console.log("✅ Contract data saved to frontend/contractData.json");
-  } catch (error) {
-    console.error("Deployment failed:", error);
-    throw error;
-  }
+  fs.mkdirSync("./frontend/src/utils", { recursive: true });
+  fs.writeFileSync("./frontend/src/utils/contractData.json", JSON.stringify(data, null, 2));
+  console.log("Contract data saved to frontend/src/utils/contractData.json");
 }
 
-main().catch((error) => {
-  console.error("Error in main:", error);
-  process.exitCode = 1;
-});
+main().catch(console.error);
