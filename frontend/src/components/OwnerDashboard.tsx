@@ -1,6 +1,7 @@
+// src/components/OwnerDashboard.tsx
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { getContract, getContractReadOnly } from "../utils/contract";
+import { getContract, getContractWithProvider } from "../utils/contract"; // ← FIXED IMPORT
 
 export default function OwnerDashboard() {
   const [properties, setProperties] = useState<any[]>([]);
@@ -17,15 +18,19 @@ export default function OwnerDashboard() {
 
   const loadProperties = async () => {
     try {
-      const contract = getContractReadOnly();
+      const contract = await getContractWithProvider(); // ← CORRECT
       const props = await contract.getAllProperties();
       setProperties(props);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to load properties:", e);
     }
   };
 
   const createProperty = async () => {
+    if (!tenant || !roomLabel || !rent || !savingsPct || !goal) {
+      alert("Fill all fields");
+      return;
+    }
     setLoading(true);
     try {
       const contract = await getContract();
@@ -38,9 +43,14 @@ export default function OwnerDashboard() {
       );
       await tx.wait();
       alert("Room created!");
+      setTenant("");
+      setRoomLabel("");
+      setRent("");
+      setSavingsPct("");
+      setGoal("");
       loadProperties();
     } catch (e: any) {
-      alert("Error: " + e.message);
+      alert("Error: " + (e.message || "Transaction failed"));
     }
     setLoading(false);
   };
@@ -50,10 +60,10 @@ export default function OwnerDashboard() {
       const contract = await getContract();
       const tx = await contract.withdrawSavings(id);
       await tx.wait();
-      alert("Withdrawn!");
+      alert("Savings withdrawn!");
       loadProperties();
     } catch (e: any) {
-      alert("Error: " + e.message);
+      alert("Error: " + (e.message || "Withdraw failed"));
     }
   };
 
@@ -63,11 +73,36 @@ export default function OwnerDashboard() {
 
       <div className="section">
         <h3>Create New Room</h3>
-        <input placeholder="Tenant Address" value={tenant} onChange={e => setTenant(e.target.value)} className="input" />
-        <input placeholder="Room Label (e.g., 101)" value={roomLabel} onChange={e => setRoomLabel(e.target.value)} className="input" />
-        <input placeholder="Rent (USDC)" value={rent} onChange={e => setRent(e.target.value)} className="input" />
-        <input placeholder="Savings %" value={savingsPct} onChange={e => setSavingsPct(e.target.value)} className="input" />
-        <input placeholder="Savings Goal" value={goal} onChange={e => setGoal(e.target.value)} className="input" />
+        <input
+          placeholder="Tenant Address (0x...)"
+          value={tenant}
+          onChange={e => setTenant(e.target.value)}
+          className="input"
+        />
+        <input
+          placeholder="Room Label (e.g., 101)"
+          value={roomLabel}
+          onChange={e => setRoomLabel(e.target.value)}
+          className="input"
+        />
+        <input
+          placeholder="Rent (USDC)"
+          value={rent}
+          onChange={e => setRent(e.target.value)}
+          className="input"
+        />
+        <input
+          placeholder="Savings % (0-100)"
+          value={savingsPct}
+          onChange={e => setSavingsPct(e.target.value)}
+          className="input"
+        />
+        <input
+          placeholder="Savings Goal (USDC)"
+          value={goal}
+          onChange={e => setGoal(e.target.value)}
+          className="input"
+        />
         <button onClick={createProperty} disabled={loading} className="btn">
           {loading ? "Creating..." : "Create Room"}
         </button>
@@ -76,13 +111,22 @@ export default function OwnerDashboard() {
       <div className="section">
         <h3>All Rooms</h3>
         {properties.length === 0 ? (
-          <p>No rooms yet.</p>
+          <p>No rooms created yet.</p>
         ) : (
           properties.map((p: any, i) => (
             <div key={i} className="p-4 border rounded mb-2 bg-white/50">
-              <p><strong>{p.roomLabel}</strong> → {p.tenant.slice(0, 6)}...{p.tenant.slice(-4)}</p>
-              <p>Rent: {ethers.formatUnits(p.rentAmount, 6)} USDC | Saved: {ethers.formatUnits(p.totalSaved, 6)} / {ethers.formatUnits(p.savingsGoal, 6)}</p>
-              <button onClick={() => withdraw(i + 1)} className="btn mt-2">Withdraw Savings</button>
+              <p>
+                <strong>{p.roomLabel || "Unnamed Room"}</strong> →{" "}
+                {p.tenant.slice(0, 6)}...{p.tenant.slice(-4)}
+              </p>
+              <p>
+                Rent: {ethers.formatUnits(p.rentAmount, 6)} USDC |{" "}
+                Saved: {ethers.formatUnits(p.totalSaved, 6)} /{" "}
+                {ethers.formatUnits(p.savingsGoal, 6)}
+              </p>
+              <button onClick={() => withdraw(i + 1)} className="btn mt-2">
+                Withdraw Savings
+              </button>
             </div>
           ))
         )}

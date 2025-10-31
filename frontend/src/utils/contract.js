@@ -12,7 +12,9 @@ export const getContract = async () => {
   return new ethers.Contract(address, abi, signer);
 };
 
-export const getContractReadOnly = () => {
-  const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+// REMOVE getContractReadOnly() — USE getContract() FOR EVERYTHING
+export const getContractWithProvider = async () => {
+  if (!window.ethereum) throw new Error("MetaMask not found");
+  const provider = new ethers.BrowserProvider(window.ethereum);
   return new ethers.Contract(address, abi, provider);
 };
