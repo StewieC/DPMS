@@ -11,6 +11,7 @@ export default function TenantDashboard({ account }: { account: string }) {
     loadProperty();
   }, [account]);
 
+  // function to load property
   const loadProperty = async () => {
     try {
       const contract = await getContractWithProvider();
@@ -22,6 +23,7 @@ export default function TenantDashboard({ account }: { account: string }) {
     }
   };
 
+  // the pay rent function
   const payRent = async () => {
     if (!property) return;
     setLoading(true);
