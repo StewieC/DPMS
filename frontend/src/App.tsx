@@ -4,45 +4,34 @@ import OwnerDashboard from "./components/OwnerDashboard";
 import TenantDashboard from "./components/TenantDashboard";
 
 function App() {
-  const [account, setAccount] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [account] = useState("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
 
   useEffect(() => {
-    // Auto-connect on load
-    if (window.ethereum?.selectedAddress) {
-      connectWallet();
-    }
-  }, []);
-
-  const connectWallet = async () => {
-    if (!window.ethereum) return alert("Install MetaMask");
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      const addr = accounts[0];
-      setAccount(addr);
-
-      // Use MetaMask provider (GUARANTEED to be on correct network)
-      const contract = await getContractWithProvider();
-      const owner = await contract.owner();
-      setIsOwner(owner.toLowerCase() === addr.toLowerCase());
-    } catch (error: any) {
-      console.error("Connect failed:", error);
-      alert("Failed to connect: " + error.message);
-    }
-  };
+    const checkOwner = async () => {
+      try {
+        const contract = await getContractWithProvider();
+        const owner = await contract.owner();
+        setIsOwner(owner.toLowerCase() === account.toLowerCase());
+      } catch (error) {
+        console.error("Owner check failed:", error);
+      }
+    };
+    checkOwner();
+  }, [account]);
 
   return (
     <div className="app-container">
       <header className="header">
         <h1>Property Vault</h1>
-        <p>Connected: {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : "Not connected"}</p>
-        <button onClick={connectWallet} className="btn mt-4">
-          {account ? "Switch Wallet" : "Connect Wallet"}
+        <p>Connected: {`${account.slice(0, 6)}...${account.slice(-4)}`}</p>
+        <button className="btn mt-4" disabled>
+          Auto-Connected (Hardhat)
         </button>
       </header>
 
-      {account && isOwner && <OwnerDashboard />}
-      {account && !isOwner && <TenantDashboard account={account} />}
+      {isOwner && <OwnerDashboard />}
+      {!isOwner && <TenantDashboard account={account} />}
     </div>
   );
 }
